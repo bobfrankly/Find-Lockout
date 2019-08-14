@@ -1,6 +1,5 @@
-# Run this file to load the function into memory for console use, or dot-source this file to use the function in another script.
-# Example Usage:     ps> Find-Lockout BobFrankly
 function Find-Lockout{
+    [cmdletbinding()]
     param(
         [string]$targetUser
     )
@@ -16,15 +15,15 @@ function Find-Lockout{
     # Search the Event logs of each DC. =========================================================================
     $results = $null
     $results = foreach ($dc in $controllers){
-        Write-Host -ForegroundColor Green "Scanning $dc"
+        Write-Verbose "Scanning $dc"
         try{
-        Get-WinEvent -computername $dc -FilterXPath $xPath -ea Stop
+        Get-WinEvent -computername $dc -FilterXPath $xPath -ea Stop -verbose:$false
         }
         catch
         [System.Exception]
         {
             $_.fullyqualifiederrorid
-            write-host -ForegroundColor Yellow "No Matches on $dc"    
+            write-verbose "---- No Matches on $dc"    
         }
     }
     
@@ -44,17 +43,14 @@ function Find-Lockout{
         $count = $ipaddy | Where-Object {$_ -eq $IP} | Measure-Object | Select -expand Count
         
         try{
-            $reverseLU = [System.Net.DNS]::GetHostEntry($ip) | Select -expand HostName
+            $reverseLU = [System.Net.DNS]::GetHostEntry($ip) | Select-object -expand HostName
         }
         catch{
             $reverseLU = "Unknown"
         }
         
-        
-        "" | Select @{n='ip' ; e={$ip}}, @{n="count" ; e={$count}}, @{n="hostName" ; e={$reverseLU}}
+        # Output
+        "" | Select-Object @{n='ip' ; e={$ip}}, @{n="count" ; e={$count}}, @{n="hostName" ; e={$reverseLU}}
     }
     
-    #Return the Final list
-    # $ipAddy
-
 }
